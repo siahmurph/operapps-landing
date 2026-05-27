@@ -119,35 +119,28 @@
 				opacity: 0.7;
 			}
 
-			.container-badge {
+			.stack-row {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				align-items: center;
+			}
+
+			.stack-item {
 				display: inline-flex;
 				align-items: center;
-				gap: 0.35rem;
-				font-size: 0.65rem;
-				font-weight: 700;
-				letter-spacing: 0.07em;
+				gap: 0.25rem;
+				font-size: 0.6rem;
+				font-weight: 600;
+				letter-spacing: 0.05em;
 				text-transform: uppercase;
-				padding: 0.15rem 0.55rem;
-				border-radius: 999px;
-				border: 1px solid transparent;
+				opacity: 0.65;
+				color: var(--bs-secondary-color);
 			}
 
-			.container-badge.is-online {
-				background: rgba(16, 185, 129, 0.12);
-				color: #10b981;
-				border-color: rgba(16, 185, 129, 0.3);
-			}
-
-			.container-badge.is-offline {
-				background: rgba(220, 53, 69, 0.12);
-				color: #dc3545;
-				border-color: rgba(220, 53, 69, 0.3);
-			}
-
-			.container-badge.is-checking {
-				background: rgba(107, 114, 128, 0.1);
-				color: #6b7280;
-				border-color: rgba(107, 114, 128, 0.2);
+			.stack-item .status-dot {
+				width: 6px;
+				height: 6px;
 			}
 		</style>
 	</head>

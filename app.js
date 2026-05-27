@@ -6,7 +6,8 @@ const APPS = [
     desc: 'File Delivery Operations — submit files to Vantage for encoding and delivery.',
     path: '/fido/',
     icon: 'bi-camera-reels-fill',
-    color: '#3b82f6'
+    color: '#3b82f6',
+    stack: 'fido2.0'
   },
   {
     key: 'sandpiper',
@@ -14,7 +15,8 @@ const APPS = [
     desc: 'Playlist and schedule management.',
     path: '/sandpiper/',
     icon: 'bi-music-note-beamed',
-    color: '#8b5cf6'
+    color: '#8b5cf6',
+    stack: 'sandpiper'
   },
   {
     key: 'parouter',
@@ -22,7 +24,8 @@ const APPS = [
     desc: 'Public affairs program routing — manage series prefixes and destinations.',
     path: '/parouter/',
     icon: 'bi-diagram-3-fill',
-    color: '#10b981'
+    color: '#10b981',
+    stack: 'parouter'
   },
   {
     key: 'purgomatic',
@@ -30,7 +33,8 @@ const APPS = [
     desc: 'Automated purge job configuration and monitoring.',
     path: '/purgeomatic/',
     icon: 'bi-trash3-fill',
-    color: '#ef4444'
+    color: '#ef4444',
+    stack: 'purgeomatic'
   },
   {
     key: null,
@@ -38,7 +42,8 @@ const APPS = [
     desc: 'Vantage workflow controls — enable or disable workflows.',
     path: '/vanmanage/',
     icon: 'bi-sliders',
-    color: '#0d6efd'
+    color: '#0d6efd',
+    stack: 'vanmanager'
   },
   {
     key: null,
@@ -46,15 +51,16 @@ const APPS = [
     desc: 'App maintenance control panel — toggle maintenance mode for any app.',
     path: '/crusher/',
     icon: 'bi-wrench-adjustable-circle-fill',
-    color: '#f97316'
+    color: '#f97316',
+    stack: 'crusher'
   }
 ]
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme()
-  const [status, containers] = await Promise.all([loadStatus(), loadContainerStatuses()])
-  renderTiles(status, containers)
+  const [status, stacks] = await Promise.all([loadStatus(), loadStackStatuses()])
+  renderTiles(status, stacks)
 })
 
 async function loadStatus () {
@@ -66,71 +72,66 @@ async function loadStatus () {
   }
 }
 
-async function pingApp (path) {
-  const ctrl = new AbortController()
-  const tid = setTimeout(() => ctrl.abort(), 5000)
+// ─── Service label map ────────────────────────────────────────────────────────
+const SERVICE_LABELS = {
+  frontend: 'Front End',
+  backend: 'Back End',
+  api: 'API',
+  db: 'Database',
+  mysql: 'MySQL',
+  nginx: 'Web',
+  worker: 'Worker',
+  redis: 'Cache'
+}
+
+function serviceLabel (s) {
+  return SERVICE_LABELS[s.toLowerCase()] || (s.charAt(0).toUpperCase() + s.slice(1))
+}
+
+async function loadStackStatuses () {
   try {
-    const res = await fetch(path, { method: 'HEAD', cache: 'no-store', signal: ctrl.signal })
-    return res.status < 500 ? 'online' : 'offline'
+    const res = await fetch('/crusher/api/stacks', { cache: 'no-store' })
+    return res.ok ? await res.json() : {}
   } catch {
-    return 'offline'
-  } finally {
-    clearTimeout(tid)
+    return {}
   }
 }
 
-async function loadContainerStatuses () {
-  const results = {}
-  await Promise.all(
-    APPS.map(async app => {
-      results[app.path] = await pingApp(app.path)
-    })
-  )
-  return results
-}
-
 // ─── Render ───────────────────────────────────────────────────────────────────
-function renderTiles (status, containers = {}) {
+function renderTiles (status, stacks = {}) {
   const grid = document.getElementById('tile-grid')
   grid.innerHTML = APPS.map(app => {
     const s = app.key ? status[app.key] : null
     const isDown = s?.enabled === true
     const statusDot = s == null ? 'unknown' : isDown ? 'maintenance' : 'live'
     const statusTxt = s == null ? '' : isDown ? 'Maintenance' : 'Live'
-    const cState = containers[app.path]
-    const cClass = cState === 'online' ? 'is-online' : cState === 'offline' ? 'is-offline' : 'is-checking'
-    const cDot = cState === 'online' ? 'live' : cState === 'offline' ? 'maintenance' : 'unknown'
-    const cLabel = cState === 'online' ? 'Online' : cState === 'offline' ? 'Offline' : '…'
+    const stackContainers = app.stack ? (stacks[app.stack] || []) : []
+    const stackHtml = stackContainers.length
+      ? `<div class="stack-row">${stackContainers.map(c => {
+          const dotClass = c.state === 'running' ? 'live' : c.state === 'exited' ? 'maintenance' : 'unknown'
+          return `<span class="stack-item"><span class="status-dot ${dotClass}"></span>${serviceLabel(c.service)}</span>`
+        }).join('')}</div>`
+      : ''
 
     return `
       <div class="col-12 col-sm-6 col-lg-4">
-        <a href="${app.path}" class="app-tile card border shadow-sm h-100 ${
-      isDown ? 'is-down' : ''
-    }">
+        <a href="${app.path}" class="app-tile card border shadow-sm h-100 ${isDown ? 'is-down' : ''}">
           <div class="card-body d-flex flex-column gap-3 p-4">
             <div class="d-flex align-items-start justify-content-between">
-              <i class="bi ${app.icon} tile-icon" style="color: ${
-      app.color
-    };"></i>
-              ${
-                statusTxt
-                  ? `
+              <i class="bi ${app.icon} tile-icon" style="color: ${app.color};"></i>
+              ${statusTxt ? `
               <div class="d-flex align-items-center gap-2 mt-1">
                 <div class="status-dot ${statusDot}"></div>
                 <span class="status-label">${statusTxt}</span>
-              </div>`
-                  : ''
-              }
+              </div>` : ''}
             </div>
             <div>
               <div class="tile-name mb-1">${app.name}</div>
               <div class="tile-desc">${app.desc}</div>
             </div>
             <div class="mt-auto pt-2 d-flex align-items-center justify-content-between">
-              <span class="text-secondary" style="font-size: 0.75rem; opacity: 0.5;">${
-                app.path
-              }</span>
-              <span class="container-badge ${cClass}"><span class="status-dot ${cDot}"></span>${cLabel}</span>
+              <span class="text-secondary" style="font-size: 0.75rem; opacity: 0.5;">${app.path}</span>
+              ${stackHtml}
             </div>
           </div>
         </a>

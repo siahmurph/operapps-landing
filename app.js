@@ -7,7 +7,7 @@ const APPS = [
     path: '/fido/',
     icon: 'bi-camera-reels-fill',
     color: '#3b82f6',
-    stack: 'fido2.0'
+    stackAliases: ['fido', 'fido2', 'fido2.0']
   },
   {
     key: 'sandpiper',
@@ -16,7 +16,7 @@ const APPS = [
     path: '/sandpiper/',
     icon: 'bi-music-note-beamed',
     color: '#8b5cf6',
-    stack: 'sandpiper'
+    stackAliases: ['sandpiper', 'sandpiper-op2']
   },
   {
     key: 'parouter',
@@ -25,7 +25,7 @@ const APPS = [
     path: '/parouter/',
     icon: 'bi-diagram-3-fill',
     color: '#10b981',
-    stack: 'parouter'
+    stackAliases: ['parouter']
   },
   {
     key: 'purgomatic',
@@ -34,7 +34,7 @@ const APPS = [
     path: '/purgeomatic/',
     icon: 'bi-trash3-fill',
     color: '#ef4444',
-    stack: 'purgeomatic'
+    stackAliases: ['purgeomatic', 'purgomatic']
   },
   {
     key: null,
@@ -43,7 +43,7 @@ const APPS = [
     path: '/vanmanage/',
     icon: 'bi-sliders',
     color: '#0d6efd',
-    stack: 'vanmanager'
+    stackAliases: ['vanmanager']
   },
   {
     key: null,
@@ -52,9 +52,19 @@ const APPS = [
     path: '/crusher/',
     icon: 'bi-wrench-adjustable-circle-fill',
     color: '#f97316',
-    stack: 'crusher'
+    stackAliases: ['crusher']
   }
 ]
+
+function getStackData (app, stacks) {
+  if (!app.stackAliases?.length) return null
+
+  for (const stackName of app.stackAliases) {
+    if (stacks[stackName]) return stacks[stackName]
+  }
+
+  return null
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -92,7 +102,7 @@ function renderTiles (status, stacks = {}) {
     const isDown = s?.enabled === true
     const statusDot = s == null ? 'unknown' : isDown ? 'maintenance' : 'live'
     const statusTxt = s == null ? '' : isDown ? 'Maintenance' : 'Live'
-    const stackData = app.stack ? stacks[app.stack] : null
+    const stackData = getStackData(app, stacks)
     const stackHtml = stackData
       ? (() => {
           const { running, total } = stackData

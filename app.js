@@ -120,7 +120,7 @@ function renderTiles (status, stacks = {}) {
       <div class="col-12 col-sm-6 col-lg-4">
         <a href="${app.path}" class="app-tile card border shadow-sm h-100 ${
       isDown ? 'is-down' : ''
-    }">
+    }" target="_blank" rel="noopener noreferrer">
           <div class="card-body d-flex flex-column gap-3 p-4">
             <div class="d-flex align-items-start justify-content-between">
               <i class="bi ${app.icon} tile-icon" style="color: ${

@@ -59,7 +59,10 @@ const APPS = [
 // ─── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme()
-  const [status, stacks] = await Promise.all([loadStatus(), loadStackStatuses()])
+  const [status, stacks] = await Promise.all([
+    loadStatus(),
+    loadStackStatuses()
+  ])
   renderTiles(status, stacks)
 })
 
@@ -70,22 +73,6 @@ async function loadStatus () {
   } catch {
     return {}
   }
-}
-
-// ─── Service label map ────────────────────────────────────────────────────────
-const SERVICE_LABELS = {
-  frontend: 'Front End',
-  backend: 'Back End',
-  api: 'API',
-  db: 'Database',
-  mysql: 'MySQL',
-  nginx: 'Web',
-  worker: 'Worker',
-  redis: 'Cache'
-}
-
-function serviceLabel (s) {
-  return SERVICE_LABELS[s.toLowerCase()] || (s.charAt(0).toUpperCase() + s.slice(1))
 }
 
 async function loadStackStatuses () {
@@ -105,32 +92,48 @@ function renderTiles (status, stacks = {}) {
     const isDown = s?.enabled === true
     const statusDot = s == null ? 'unknown' : isDown ? 'maintenance' : 'live'
     const statusTxt = s == null ? '' : isDown ? 'Maintenance' : 'Live'
-    const stackContainers = app.stack ? (stacks[app.stack] || []) : []
-    const stackHtml = stackContainers.length
-      ? `<div class="stack-row">${stackContainers.map(c => {
-          const dotClass = c.state === 'running' ? 'live' : c.state === 'exited' ? 'maintenance' : 'unknown'
-          return `<span class="stack-item"><span class="status-dot ${dotClass}"></span>${serviceLabel(c.service)}</span>`
-        }).join('')}</div>`
+    const stackData = app.stack ? stacks[app.stack] : null
+    const stackHtml = stackData
+      ? (() => {
+          const { running, total } = stackData
+          const dotClass =
+            running === total
+              ? 'live'
+              : running === 0
+              ? 'maintenance'
+              : 'partial'
+          return `<span class="stack-count"><span class="status-dot ${dotClass}"></span>${running} / ${total}</span>`
+        })()
       : ''
 
     return `
       <div class="col-12 col-sm-6 col-lg-4">
-        <a href="${app.path}" class="app-tile card border shadow-sm h-100 ${isDown ? 'is-down' : ''}">
+        <a href="${app.path}" class="app-tile card border shadow-sm h-100 ${
+      isDown ? 'is-down' : ''
+    }">
           <div class="card-body d-flex flex-column gap-3 p-4">
             <div class="d-flex align-items-start justify-content-between">
-              <i class="bi ${app.icon} tile-icon" style="color: ${app.color};"></i>
-              ${statusTxt ? `
+              <i class="bi ${app.icon} tile-icon" style="color: ${
+      app.color
+    };"></i>
+              ${
+                statusTxt
+                  ? `
               <div class="d-flex align-items-center gap-2 mt-1">
                 <div class="status-dot ${statusDot}"></div>
                 <span class="status-label">${statusTxt}</span>
-              </div>` : ''}
+              </div>`
+                  : ''
+              }
             </div>
             <div>
               <div class="tile-name mb-1">${app.name}</div>
               <div class="tile-desc">${app.desc}</div>
             </div>
             <div class="mt-auto pt-2 d-flex align-items-center justify-content-between">
-              <span class="text-secondary" style="font-size: 0.75rem; opacity: 0.5;">${app.path}</span>
+              <span class="text-secondary" style="font-size: 0.75rem; opacity: 0.5;">${
+                app.path
+              }</span>
               ${stackHtml}
             </div>
           </div>
